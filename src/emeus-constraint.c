@@ -795,6 +795,7 @@ emeus_constraint_get_active (EmeusConstraint *constraint)
  *                               (<connection><superview>)?
  *               <orientation> = 'H' | 'V'
  *                 <superview> = '|'
+ *                      <view> = [<viewName>(<predicateListWithParens>)?]
  *                <connection> = '' | '-' <predicateList> '-' | '-'
  *             <predicateList> = <simplePredicate> | <predicateListWithParens>
  *           <simplePredicate> = <metricName> | <positiveNumber>
