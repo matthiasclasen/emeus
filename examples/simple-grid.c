@@ -55,40 +55,6 @@ draw (GtkWidget *area,
   return TRUE;
 }
 
-/* Layout:
- *
- *   +-----------------------------+
- *   | +-----------+ +-----------+ |
- *   | |  Child 1  | |  Child 2  | |
- *   | +-----------+ +-----------+ |
- *   | +-------------------------+ |
- *   | |         Child 3         | |
- *   | +-------------------------+ |
- *   +-----------------------------+
- *
- * Visual format:
- *
- *   H:|-8-[view1(==view2)]-12-[view2]-8-|
- *   H:|-8-[view3]-8-|
- *   V:|-8-[view1,view2]-12-[view3(==view1,view2)]-8-|
- *
- * Constraints:
- *
- *   super.start = child1.start - 8
- *   child1.width = child2.width
- *   child1.end = child2.start - 12
- *   child2.end = super.end - 8
- *   super.start = child3.start - 8
- *   child3.end = super.end - 8
- *   super.top = child1.top - 8
- *   super.top = child2.top - 8
- *   child1.bottom = child3.top - 12
- *   child2.bottom = child3.top - 12
- *   child3.height = child1.height
- *   child3.height = child2.height
- *   child3.bottom = super.bottom - 8
- *
- */
 static void
 build_grid (EmeusTestApplicationWindow *self)
 {
@@ -194,6 +160,14 @@ build_grid (EmeusTestApplicationWindow *self)
                                                       EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
                                                       1.0,
                                                       0.0,
+                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new (button1,
+                                                      EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
+                                                      EMEUS_CONSTRAINT_RELATION_LE,
+                                                      NULL,
+                                                      EMEUS_CONSTRAINT_ATTRIBUTE_INVALID,
+                                                      0.0,
+                                                      100.0,
                                                       EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
                                 NULL);
 }
