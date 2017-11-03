@@ -1781,6 +1781,10 @@ emeus_constraint_layout_create_stack (EmeusConstraintLayout *layout,
 
   emeus_constraint_layout_pack (layout, stack, name, NULL);
 
+  /* HACK: move the stack child around so it does not end up on top */
+  g_sequence_move (g_sequence_iter_prev (g_sequence_get_end_iter (layout->children)),
+                   g_sequence_get_begin_iter (layout->children));
+
   if (orientation == GTK_ORIENTATION_HORIZONTAL)
     {
       opp_start = EMEUS_CONSTRAINT_ATTRIBUTE_TOP;
