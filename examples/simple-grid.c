@@ -40,6 +40,21 @@ emeus_test_application_window_class_init (EmeusTestApplicationWindowClass *klass
 {
 }
 
+
+static gboolean
+draw (GtkWidget *area,
+      cairo_t   *cr,
+      gpointer   data)
+{
+  cairo_set_source_rgb (cr, 1, 0, 1);
+  cairo_rectangle (cr, 0, 0,
+                   gtk_widget_get_allocated_width (area),
+                   gtk_widget_get_allocated_height (area));
+  cairo_fill (cr);
+
+  return TRUE;
+}
+
 /* Layout:
  *
  *   +-----------------------------+
@@ -99,6 +114,11 @@ build_grid (EmeusTestApplicationWindow *self)
   emeus_constraint_layout_pack (layout, button5, "child3", NULL);
   gtk_widget_show (button5);
 
+  GtkWidget *child6 = gtk_drawing_area_new ();
+  g_signal_connect (child6, "draw", G_CALLBACK (draw), NULL);
+  emeus_constraint_layout_pack (layout, child6, "child6", NULL);
+  gtk_widget_show (child6);
+
   GtkWidget *area1 = emeus_constraint_layout_create_stack (layout,
                                                 GTK_ORIENTATION_HORIZONTAL,
                                                 -8.0,
@@ -110,10 +130,15 @@ build_grid (EmeusTestApplicationWindow *self)
                                                 -8.0,
                                                 "area2",
                                                 button4, button5, NULL);
+  GtkWidget *area3 = emeus_constraint_layout_create_stack (layout,
+                                                GTK_ORIENTATION_VERTICAL,
+                                                -8.0,
+                                                "area3",
+                                                area1, area2, child6, NULL);
 
   emeus_constraint_layout_add_constraints (layout,
-                                /* center area1, 2/3s of the width */
-                                emeus_constraint_new (area1,
+                                /* center area3, 2/3s of the width */
+                                emeus_constraint_new (area3,
                                                       EMEUS_CONSTRAINT_ATTRIBUTE_CENTER_X,
                                                       EMEUS_CONSTRAINT_RELATION_EQ,
                                                       NULL,
@@ -121,7 +146,7 @@ build_grid (EmeusTestApplicationWindow *self)
                                                       1.0,
                                                       0.0,
                                                       EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (area1,
+                                emeus_constraint_new (area3,
                                                       EMEUS_CONSTRAINT_ATTRIBUTE_CENTER_Y,
                                                       EMEUS_CONSTRAINT_RELATION_EQ,
                                                       NULL,
@@ -129,7 +154,7 @@ build_grid (EmeusTestApplicationWindow *self)
                                                       1.0,
                                                       -12.0,
                                                       EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (area1,
+                                emeus_constraint_new (area3,
                                                       EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
                                                       EMEUS_CONSTRAINT_RELATION_EQ,
                                                       NULL,
@@ -145,39 +170,11 @@ build_grid (EmeusTestApplicationWindow *self)
                                                       2.0,
                                                       0.0,
                                                       EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-
-                                /* area2 below area1 */
-                                emeus_constraint_new (area2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
+                                emeus_constraint_new (child6,
+                                                      EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
                                                       EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      area1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
-                                                      1.0,
-                                                      8.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (area2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_LEFT,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      area1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_LEFT,
-                                                      1.0,
-                                                      0.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (area2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_RIGHT,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      area1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_RIGHT,
-                                                      1.0,
-                                                      0.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-
-                                /* layout big enough for both areas */
-                                emeus_constraint_new (area2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
-                                                      EMEUS_CONSTRAINT_RELATION_LE,
-                                                      NULL,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
+                                                      button3,
+                                                      EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
                                                       1.0,
                                                       0.0,
                                                       EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
