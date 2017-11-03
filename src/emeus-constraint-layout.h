@@ -47,6 +47,15 @@ void            emeus_constraint_layout_pack                    (EmeusConstraint
                                                                  const char            *name,
                                                                  EmeusConstraint       *first_constraint,
                                                                  ...);
+
+EMEUS_AVAILABLE_IN_1_0
+GtkWidget *     emeus_constraint_layout_create_stack            (EmeusConstraintLayout *layout,
+                                                                 GtkOrientation         orientation,
+                                                                 double                 spacing,
+                                                                 const char            *name,
+                                                                 GtkWidget             *first_child,
+                                                                 ...);
+
 EMEUS_AVAILABLE_IN_1_0
 void            emeus_constraint_layout_add_constraint          (EmeusConstraintLayout *layout,
                                                                  EmeusConstraint       *constraint);

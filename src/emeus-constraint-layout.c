@@ -1741,6 +1741,94 @@ emeus_constraint_layout_pack (EmeusConstraintLayout *layout,
   va_end (args);
 }
 
+GtkWidget *
+emeus_constraint_layout_create_stack (EmeusConstraintLayout *layout,
+                                      GtkOrientation         orientation,
+                                      gdouble                spacing,
+                                      const char            *name,
+                                      GtkWidget             *first_child,
+                                      ...)
+{
+  GtkWidget *stack;
+  EmeusConstraintAttribute opp_start, opp_end, start, end;
+  va_list args;
+  GtkWidget *child;
+  GtkWidget *prev_child;
+
+  stack = gtk_drawing_area_new (); /* just a placeholder */
+  gtk_widget_show (stack);
+
+  emeus_constraint_layout_pack (layout, stack, name, NULL);
+
+  if (orientation == GTK_ORIENTATION_HORIZONTAL)
+    {
+      opp_start = EMEUS_CONSTRAINT_ATTRIBUTE_TOP;
+      opp_end = EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM;
+      start = EMEUS_CONSTRAINT_ATTRIBUTE_START;
+      end = EMEUS_CONSTRAINT_ATTRIBUTE_END;
+    }
+  else
+    {
+      start = EMEUS_CONSTRAINT_ATTRIBUTE_TOP;
+      end = EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM;
+      opp_start = EMEUS_CONSTRAINT_ATTRIBUTE_START;
+      opp_end = EMEUS_CONSTRAINT_ATTRIBUTE_END;
+    }
+
+  prev_child = NULL;
+  child = first_child;
+  va_start (args, first_child);
+
+  while (child != NULL)
+    {
+#if 0
+      g_assert (gtk_widget_get_parent (child) == GTK_WIDGET (layout) ||
+                gtk_widget_get_parent (gtk_widget_get_parent (child)) == GTK_WIDGET (layout));
+#endif
+
+      emeus_constraint_layout_add_constraints (layout,
+           emeus_constraint_new (stack, opp_start,
+                                 EMEUS_CONSTRAINT_RELATION_EQ,
+                                 child, opp_start,
+                                 1.0, 0.0,
+                                 EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+           emeus_constraint_new (stack, opp_end,
+                                 EMEUS_CONSTRAINT_RELATION_EQ,
+                                 child, opp_end,
+                                 1.0, 0.0,
+                                 EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+           NULL);
+      if (prev_child)
+        emeus_constraint_layout_add_constraint (layout,
+             emeus_constraint_new (prev_child, end,
+                                   EMEUS_CONSTRAINT_RELATION_EQ,
+                                   child, start,
+                                   1.0, spacing,
+                                   EMEUS_CONSTRAINT_STRENGTH_REQUIRED));
+      else
+        emeus_constraint_layout_add_constraint (layout,
+             emeus_constraint_new (stack, start,
+                                   EMEUS_CONSTRAINT_RELATION_EQ,
+                                   child, start,
+                                   1.0, 0.0,
+                                   EMEUS_CONSTRAINT_STRENGTH_REQUIRED));
+
+      prev_child = child;
+      child = va_arg (args, GtkWidget *);
+    }
+
+  emeus_constraint_layout_add_constraint (layout,
+       emeus_constraint_new (stack, end,
+                             EMEUS_CONSTRAINT_RELATION_EQ,
+                             prev_child, end,
+                             1.0, 0.0,
+                             EMEUS_CONSTRAINT_STRENGTH_REQUIRED));
+
+  va_end (args);
+
+  return stack;
+}
+
 /**
  * emeus_constraint_layout_get_constraints:
  * @layout: a #EmeusConstraintLayout
