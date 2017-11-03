@@ -1741,6 +1741,27 @@ emeus_constraint_layout_pack (EmeusConstraintLayout *layout,
   va_end (args);
 }
 
+/**
+ * emeus_constraint_layout_create_stack:
+ * @layout: a #EmeusConstraintLayout
+ * @orientation: the orientation in which the children are stacked
+ * @spacing: The amount of space to insert between consecutive children
+ * @name: (nullable): an optional name for the created child representing the stack
+ * @first_child: a child of @layout
+ * @...: a %NULL-terminated list of children of @layout
+ *
+ * Arranges the listed children in a horizontal or vertical stack,
+ * by suitable constraints to ensure that the children are lined up in a row,
+ * and all share the same height (in the horizontal case) or width (in the vertical case).
+ *
+ * Additionally, this function adds another child to @layout that represents
+ * the stack as a whole, and can be used for adding further constraints.
+ *
+ * The stacks created by this function can be nested, by including the return value
+ * of this function in the child list passed to another call.
+ *
+ * Returns: a newly created child that has already been added to @layout
+ */
 GtkWidget *
 emeus_constraint_layout_create_stack (EmeusConstraintLayout *layout,
                                       GtkOrientation         orientation,
