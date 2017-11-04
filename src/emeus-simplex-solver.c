@@ -1838,8 +1838,11 @@ simplex_solver_remove_constraint (SimplexSolver *solver,
 no_columns:
   if (g_hash_table_lookup (solver->rows, marker) != NULL)
     simplex_solver_remove_row (solver, marker, TRUE);
+#if 0
+  // where does this ref come from ?
   else
     variable_unref (marker);
+#endif
 
   if (error_vars != NULL)
     {
@@ -1848,7 +1851,7 @@ no_columns:
       variable_set_iter_init (error_vars, &iter);
       while (variable_set_iter_next (&iter, &v))
         {
-          if (v != marker)
+          if (v != marker) // also, the marker is used here after the unref
             simplex_solver_remove_column (solver, v);
         }
     }
