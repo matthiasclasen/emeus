@@ -40,40 +40,37 @@ emeus_test_application_window_class_init (EmeusTestApplicationWindowClass *klass
 {
 }
 
-/* Layout:
- *
- *   +-----------------------------+
- *   | +-----------+ +-----------+ |
- *   | |  Child 1  | |  Child 2  | |
- *   | +-----------+ +-----------+ |
- *   | +-------------------------+ |
- *   | |         Child 3         | |
- *   | +-------------------------+ |
- *   +-----------------------------+
- *
- * Visual format:
- *
- *   H:|-8-[view1(==view2)]-12-[view2]-8-|
- *   H:|-8-[view3]-8-|
- *   V:|-8-[view1,view2]-12-[view3(==view1,view2)]-8-|
- *
- * Constraints:
- *
- *   super.start = child1.start - 8
- *   child1.width = child2.width
- *   child1.end = child2.start - 12
- *   child2.end = super.end - 8
- *   super.start = child3.start - 8
- *   child3.end = super.end - 8
- *   super.top = child1.top - 8
- *   super.top = child2.top - 8
- *   child1.bottom = child3.top - 12
- *   child2.bottom = child3.top - 12
- *   child3.height = child1.height
- *   child3.height = child2.height
- *   child3.bottom = super.bottom - 8
- *
- */
+static gboolean
+draw_cb (GtkWidget   *area,
+         cairo_t     *cr)
+{
+  GdkRGBA color;
+  const char *c;
+
+  c = (const char *)g_object_get_data (G_OBJECT (area), "color");
+  gdk_rgba_parse (&color, c);
+
+  gdk_cairo_set_source_rgba (cr, &color);
+  cairo_rectangle (cr, 0, 0,
+                   gtk_widget_get_allocated_width (area),
+                   gtk_widget_get_allocated_height (area));
+  cairo_fill (cr);
+
+  return TRUE;
+}
+
+GtkWidget *
+new_block (const char *color)
+{
+  GtkWidget *da;
+
+  da = gtk_drawing_area_new ();
+  g_signal_connect (da, "draw", G_CALLBACK (draw_cb), NULL);
+  g_object_set_data (G_OBJECT (da), "color", (gpointer)color);
+
+  return da;
+}
+
 static void
 build_grid (EmeusTestApplicationWindow *self)
 {
@@ -91,112 +88,65 @@ build_grid (EmeusTestApplicationWindow *self)
   emeus_constraint_layout_pack (layout, button3, "child3", NULL);
   gtk_widget_show (button3);
 
-  emeus_constraint_layout_add_constraints (layout,
-                                emeus_constraint_new (NULL,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_START,
+  GtkWidget *button4 = gtk_button_new_with_label ("Child 4");
+  emeus_constraint_layout_pack (layout, button4, "child4", NULL);
+  gtk_widget_show (button4);
+
+  GtkWidget *da1 = new_block ("red");
+  emeus_constraint_layout_pack (layout, da1, "da1", NULL);
+  gtk_widget_show (da1);
+
+  GtkWidget *da2 = new_block ("blue");
+  emeus_constraint_layout_pack (layout, da2, "da2", NULL);
+  gtk_widget_show (da2);
+
+  GtkWidget *da3 = new_block ("yellow");
+  emeus_constraint_layout_pack (layout, da3, "da3", NULL);
+  gtk_widget_show (da3);
+
+  EmeusConstraintLayoutGroup *group = emeus_constraint_layout_create_group (layout, 3, 3, 1, 1);
+  emeus_constraint_layout_pack (layout, GTK_WIDGET (group),
+                                "grid1",
+                                emeus_constraint_new (group, EMEUS_CONSTRAINT_ATTRIBUTE_LEFT,
                                                       EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_START,
-                                                      1.0,
-                                                      -8.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
+                                                      NULL, EMEUS_CONSTRAINT_ATTRIBUTE_LEFT,
+                                                      1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new (group, EMEUS_CONSTRAINT_ATTRIBUTE_RIGHT,
                                                       EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
-                                                      1.0,
-                                                      0.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_END,
+                                                      NULL, EMEUS_CONSTRAINT_ATTRIBUTE_RIGHT,
+                                                      1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new (group, EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
                                                       EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_START,
-                                                      1.0,
-                                                      -12.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_END,
+                                                      NULL, EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
+                                                      1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new (group, EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
                                                       EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      NULL,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_END,
-                                                      1.0,
-                                                      -8.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (NULL,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_START,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button3,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_START,
-                                                      1.0,
-                                                      -8.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button3,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_END,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      NULL,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_END,
-                                                      1.0,
-                                                      -8.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (NULL,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
-                                                      1.0,
-                                                      -8.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (NULL,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
-                                                      1.0,
-                                                      -8.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button3,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
-                                                      1.0,
-                                                      -12.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button3,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
-                                                      1.0,
-                                                      -12.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button3,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button1,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
-                                                      1.0,
-                                                      0.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button3,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      button2,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
-                                                      1.0,
-                                                      0.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
-                                emeus_constraint_new (button3,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
-                                                      EMEUS_CONSTRAINT_RELATION_EQ,
-                                                      NULL,
-                                                      EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
-                                                      1.0,
-                                                      -8.0,
-                                                      EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                                      NULL, EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
+                                                      1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
                                 NULL);
+  emeus_constraint_layout_add_constraints (layout,
+                                           emeus_constraint_new (button1, EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
+                                                                 EMEUS_CONSTRAINT_RELATION_EQ,
+                                                                 button3, EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
+                                                                 1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                           emeus_constraint_new (button2, EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
+                                                                 EMEUS_CONSTRAINT_RELATION_EQ,
+                                                                 button4, EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
+                                                                 1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                           NULL);
+
+  EmeusConstraintLayoutGroup *group2 = emeus_constraint_layout_create_group (layout, 3, 3, 1, 1);
+  emeus_constraint_layout_pack (layout, GTK_WIDGET (group2), "grid2", NULL);
+
+  emeus_constraint_layout_group_attach (group, button1, 0, 2, 0, 1);
+  emeus_constraint_layout_group_attach (group, button2, 0, 1, 1, 3);
+  emeus_constraint_layout_group_attach (group, button3, 1, 3, 2, 3);
+  emeus_constraint_layout_group_attach (group, button4, 2, 3, 0, 2);
+  emeus_constraint_layout_group_attach (group, GTK_WIDGET (group2), 1, 2, 1, 2);
+
+  emeus_constraint_layout_group_attach (group2, da1, 0, 1, 0, 1);
+  emeus_constraint_layout_group_attach (group2, da2, 1, 2, 1, 2);
+  emeus_constraint_layout_group_attach (group2, da3, 2, 3, 2, 3);
 }
 
 static void
