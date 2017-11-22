@@ -2536,3 +2536,240 @@ emeus_constraint_layout_child_get_name (EmeusConstraintLayoutChild *child)
 
   return child->name;
 }
+
+struct _EmeusConstraintLayoutGroup
+{
+  GtkWidget parent_instance;
+
+  EmeusConstraintLayout *layout;
+
+  int n_rows;
+  int n_columns;
+
+  gboolean row_homogeneous;
+  gboolean column_homogeneous;
+
+  Variable **rows;
+  Variable **columns;
+
+  gboolean attached;
+};
+
+struct _EmeusConstraintLayoutGroupClass
+{
+  GtkWidgetClass parent_class;
+};
+
+G_DEFINE_TYPE (EmeusConstraintLayoutGroup, emeus_constraint_layout_group, GTK_TYPE_WIDGET)
+
+static void
+emeus_constraint_layout_group_init (EmeusConstraintLayoutGroup *group)
+{
+  group->attached = FALSE;
+}
+
+EmeusConstraintLayoutGroup *
+emeus_constraint_layout_create_group (EmeusConstraintLayout *layout,
+                                      int                    rows,
+                                      int                    columns,
+                                      gboolean               row_homogeneous,
+                                      gboolean               column_homogeneous)
+{
+  EmeusConstraintLayoutGroup *group;
+  int i;
+  Expression *expr;
+
+  group = g_object_new (EMEUS_TYPE_CONSTRAINT_LAYOUT_GROUP, NULL);
+
+  group->layout = layout;
+  group->n_rows = rows;
+  group->n_columns = columns;
+
+  group->row_homogeneous = row_homogeneous;
+  group->column_homogeneous = column_homogeneous;
+
+  group->rows = g_new (Variable *, rows + 1);
+  for (i = 0; i <= rows; i++)
+    {
+      group->rows[i] = simplex_solver_create_variable (&layout->solver, "row", 0.0);
+
+      if (i > 0)
+        {
+          expr = expression_new_from_variable (group->rows[i - 1]);
+          simplex_solver_add_constraint (&layout->solver,
+                                         group->rows[i], OPERATOR_TYPE_GE, expr,
+                                         STRENGTH_REQUIRED);
+          expression_unref (expr);
+        }
+      if (i > 1 && row_homogeneous)
+        {
+          expr = expression_divide (
+                     expression_plus_variable (
+                         expression_new_from_variable (group->rows[i]),
+                         group->rows[i - 2]),
+                     2.0);
+          simplex_solver_add_constraint (&layout->solver,
+                                         group->rows[i - 1], OPERATOR_TYPE_EQ, expr,
+                                         STRENGTH_REQUIRED);
+          expression_unref (expr);
+        }
+    }
+
+  group->columns = g_new (Variable *, columns + 1);
+  for (i = 0; i <= columns; i++)
+    {
+      group->columns[i] = simplex_solver_create_variable (&layout->solver, "column", 0.0);
+      if (i > 0)
+        {
+          expr = expression_new_from_variable (group->columns[i - 1]);
+          simplex_solver_add_constraint (&layout->solver,
+                                         group->columns[i], OPERATOR_TYPE_GE, expr,
+                                         STRENGTH_REQUIRED);
+          expression_unref (expr);
+        }
+      if (i > 1 && column_homogeneous)
+        {
+          expr = expression_divide (
+                     expression_plus_variable (
+                         expression_new_from_variable (group->columns[i]),
+                         group->columns[i - 2]),
+                     2.0);
+          simplex_solver_add_constraint (&layout->solver,
+                                         group->columns[i - 1], OPERATOR_TYPE_EQ, expr,
+                                         STRENGTH_REQUIRED);
+          expression_unref (expr);
+        }
+    }
+
+  return group;
+}
+
+static void
+setup_group_constraints (EmeusConstraintLayoutGroup *group)
+{
+  EmeusConstraintLayout *layout = group->layout;
+  EmeusConstraintLayoutChild *child;
+  Expression *expr;
+
+  if (group->attached)
+    return;
+
+  child = EMEUS_CONSTRAINT_LAYOUT_CHILD (gtk_widget_get_parent (GTK_WIDGET (group)));
+
+  if (!child)
+    return;
+
+  expr = expression_new_from_variable (get_child_attribute (child, EMEUS_CONSTRAINT_ATTRIBUTE_TOP));
+  simplex_solver_add_constraint (&layout->solver,
+                                 group->rows[0], OPERATOR_TYPE_EQ, expr,
+                                 STRENGTH_REQUIRED);
+  expression_unref (expr);
+
+  expr = expression_new_from_variable (get_child_attribute (child, EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM));
+  simplex_solver_add_constraint (&layout->solver,
+                                 group->rows[group->n_rows], OPERATOR_TYPE_EQ, expr,
+                                 STRENGTH_REQUIRED);
+  expression_unref (expr);
+
+  expr = expression_new_from_variable (get_child_attribute (child, EMEUS_CONSTRAINT_ATTRIBUTE_LEFT));
+  simplex_solver_add_constraint (&layout->solver,
+                                 group->columns[0], OPERATOR_TYPE_EQ, expr,
+                                 STRENGTH_REQUIRED);
+  expression_unref (expr);
+
+  expr = expression_new_from_variable (get_child_attribute (child, EMEUS_CONSTRAINT_ATTRIBUTE_RIGHT));
+  simplex_solver_add_constraint (&layout->solver,
+                                 group->columns[group->n_columns], OPERATOR_TYPE_EQ, expr,
+                                 STRENGTH_REQUIRED);
+  expression_unref (expr);
+
+  group->attached = TRUE;
+}
+
+static void
+emeus_constraint_layout_group_finalize (GObject *object)
+{
+  EmeusConstraintLayoutGroup *group = EMEUS_CONSTRAINT_LAYOUT_GROUP (object);
+  int i;
+
+  for (i = 0; i < group->n_rows; i++)
+    variable_unref (group->rows[i]);
+  g_free (group->rows);
+
+  for (i = 0; i < group->n_columns; i++)
+    variable_unref (group->columns[i]);
+  g_free (group->columns);
+
+  G_OBJECT_CLASS (emeus_constraint_layout_group_parent_class)->finalize (object);
+}
+
+static void
+emeus_constraint_layout_group_class_init (EmeusConstraintLayoutGroupClass *klass)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+
+  gobject_class->finalize = emeus_constraint_layout_group_finalize;
+}
+
+void
+emeus_constraint_layout_group_attach (EmeusConstraintLayoutGroup *group,
+                                      GtkWidget                  *widget,
+                                      int                         left,
+                                      int                         right,
+                                      int                         top,
+                                      int                         bottom)
+{
+  EmeusConstraintLayout *layout = group->layout;
+  EmeusConstraintLayoutChild *group_child;
+  EmeusConstraintLayoutChild *child;
+  Variable *var;
+  Expression *expr;
+
+  g_return_if_fail (GTK_IS_WIDGET (widget));
+  g_return_if_fail (0 <= left);
+  g_return_if_fail (left < right);
+  g_return_if_fail (right <= group->n_columns);
+  g_return_if_fail (0 <= top);
+  g_return_if_fail (top < bottom);
+  g_return_if_fail (bottom <= group->n_rows);
+
+  group_child = EMEUS_CONSTRAINT_LAYOUT_CHILD (gtk_widget_get_parent (GTK_WIDGET (group)));
+
+  if (EMEUS_IS_CONSTRAINT_LAYOUT_CHILD (widget))
+    child = EMEUS_CONSTRAINT_LAYOUT_CHILD (widget);
+  else
+    child = EMEUS_CONSTRAINT_LAYOUT_CHILD (gtk_widget_get_parent (widget));
+
+  g_return_if_fail (gtk_widget_get_parent (GTK_WIDGET (group_child)) == GTK_WIDGET (layout));
+  g_return_if_fail (gtk_widget_get_parent (GTK_WIDGET (child)) == GTK_WIDGET (layout));
+
+  setup_group_constraints (group);
+
+  var = get_child_attribute (child, EMEUS_CONSTRAINT_ATTRIBUTE_LEFT);
+  expr = expression_new_from_variable (group->columns[left]);
+  simplex_solver_add_constraint (&layout->solver,
+                                 var, OPERATOR_TYPE_EQ, expr,
+                                 STRENGTH_REQUIRED);
+  expression_unref (expr);
+
+  var = get_child_attribute (child, EMEUS_CONSTRAINT_ATTRIBUTE_RIGHT);
+  expr = expression_new_from_variable (group->columns[right]);
+  simplex_solver_add_constraint (&layout->solver,
+                                 var, OPERATOR_TYPE_EQ, expr,
+                                 STRENGTH_REQUIRED);
+  expression_unref (expr);
+
+  var = get_child_attribute (child, EMEUS_CONSTRAINT_ATTRIBUTE_TOP);
+  expr = expression_new_from_variable (group->rows[top]);
+  simplex_solver_add_constraint (&layout->solver,
+                                 var, OPERATOR_TYPE_EQ, expr,
+                                 STRENGTH_REQUIRED);
+  expression_unref (expr);
+
+  var = get_child_attribute (child, EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM);
+  expr = expression_new_from_variable (group->rows[bottom]);
+  simplex_solver_add_constraint (&layout->solver,
+                                 var, OPERATOR_TYPE_EQ, expr,
+                                 STRENGTH_REQUIRED);
+  expression_unref (expr);
+}

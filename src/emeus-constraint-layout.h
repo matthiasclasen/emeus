@@ -61,6 +61,7 @@ GList *         emeus_constraint_layout_get_constraints         (EmeusConstraint
 EMEUS_AVAILABLE_IN_1_0
 void            emeus_constraint_layout_clear_constraints       (EmeusConstraintLayout *layout);
 
+
 #define EMEUS_TYPE_CONSTRAINT_LAYOUT_CHILD (emeus_constraint_layout_child_get_type())
 
 /**
@@ -112,4 +113,24 @@ void            emeus_constraint_layout_child_remove_constraint         (EmeusCo
 EMEUS_AVAILABLE_IN_1_0
 void            emeus_constraint_layout_child_clear_constraints         (EmeusConstraintLayoutChild *child);
 
+#define EMEUS_TYPE_CONSTRAINT_LAYOUT_GROUP (emeus_constraint_layout_group_get_type())
+
+EMEUS_AVAILABLE_IN_1_0
+G_DECLARE_FINAL_TYPE (EmeusConstraintLayoutGroup, emeus_constraint_layout_group, EMEUS, CONSTRAINT_LAYOUT_GROUP, GtkWidget)
+
+EMEUS_AVAILABLE_IN_1_0
+EmeusConstraintLayoutGroup *
+                emeus_constraint_layout_create_group (EmeusConstraintLayout      *layout,
+                                                      int                         rows,
+                                                      int                         columns,
+                                                      gboolean                    row_homogeneous,
+                                                      gboolean                    column_homogeneous);
+
+EMEUS_AVAILABLE_IN_1_0
+void            emeus_constraint_layout_group_attach (EmeusConstraintLayoutGroup *group,
+                                                      GtkWidget                  *child,
+                                                      int                         left,
+                                                      int                         right,
+                                                      int                         top,
+                                                      int                         bottom);
 G_END_DECLS
