@@ -150,6 +150,84 @@ build_grid (EmeusTestApplicationWindow *self)
 }
 
 static void
+build_grid2 (EmeusTestApplicationWindow *self)
+{
+  EmeusConstraintLayout *layout = (EmeusConstraintLayout *) self->layout;
+
+  GtkWidget *da1 = new_block ("red");
+  emeus_constraint_layout_pack (layout, da1, "da1", NULL);
+  gtk_widget_show (da1);
+
+  GtkWidget *da2 = new_block ("blue");
+  emeus_constraint_layout_pack (layout, da2, "da2", NULL);
+  gtk_widget_show (da2);
+
+  GtkWidget *da3 = new_block ("yellow");
+  emeus_constraint_layout_pack (layout, da3, "da3", NULL);
+  gtk_widget_show (da3);
+
+  GtkWidget *da4 = new_block ("green");
+  emeus_constraint_layout_pack (layout, da4, "da4", NULL);
+  gtk_widget_show (da4);
+
+  GtkWidget *da5 = new_block ("purple");
+  emeus_constraint_layout_pack (layout, da5, "da5", NULL);
+  gtk_widget_show (da5);
+
+  emeus_constraint_layout_add_constraints (layout,
+                                emeus_constraint_new_constant (da1, EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
+                                                               EMEUS_CONSTRAINT_RELATION_GE,
+                                                               20.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new_constant (da1, EMEUS_CONSTRAINT_ATTRIBUTE_WIDTH,
+                                                               EMEUS_CONSTRAINT_RELATION_GE,
+                                                               20.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new_constant (da2, EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
+                                                               EMEUS_CONSTRAINT_RELATION_GE,
+                                                               20.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new_constant (da3, EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
+                                                               EMEUS_CONSTRAINT_RELATION_GE,
+                                                               20.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new_constant (da4, EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
+                                                               EMEUS_CONSTRAINT_RELATION_GE,
+                                                               20.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new_constant (da5, EMEUS_CONSTRAINT_ATTRIBUTE_HEIGHT,
+                                                               EMEUS_CONSTRAINT_RELATION_GE,
+                                                               20.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                NULL);
+  EmeusConstraintLayoutGroup *group1 = emeus_constraint_layout_create_group (layout, 1, 3, 1, 1);
+  emeus_constraint_layout_pack (layout, GTK_WIDGET (group1), "grid1",
+                                emeus_constraint_new (group1, EMEUS_CONSTRAINT_ATTRIBUTE_LEFT,
+                                                      EMEUS_CONSTRAINT_RELATION_EQ,
+                                                      NULL, EMEUS_CONSTRAINT_ATTRIBUTE_LEFT,
+                                                      1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new (group1, EMEUS_CONSTRAINT_ATTRIBUTE_RIGHT,
+                                                      EMEUS_CONSTRAINT_RELATION_EQ,
+                                                      NULL, EMEUS_CONSTRAINT_ATTRIBUTE_RIGHT,
+                                                      1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                NULL);
+
+  EmeusConstraintLayoutGroup *group2 = emeus_constraint_layout_create_group (layout, 3, 1, 1, 1);
+  emeus_constraint_layout_pack (layout, GTK_WIDGET (group2), "grid2",
+                                emeus_constraint_new (group2, EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
+                                                      EMEUS_CONSTRAINT_RELATION_EQ,
+                                                      NULL, EMEUS_CONSTRAINT_ATTRIBUTE_TOP,
+                                                      1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                emeus_constraint_new (group2, EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
+                                                      EMEUS_CONSTRAINT_RELATION_EQ,
+                                                      NULL, EMEUS_CONSTRAINT_ATTRIBUTE_BOTTOM,
+                                                      1.0, 0.0, EMEUS_CONSTRAINT_STRENGTH_REQUIRED),
+                                NULL);
+
+  emeus_constraint_layout_group_attach (group1, da1, 0, 1, 0, 1);
+  emeus_constraint_layout_group_attach (group1, da2, 1, 2, 0, 1);
+  emeus_constraint_layout_group_attach (group1, da3, 2, 3, 0, 1);
+
+  emeus_constraint_layout_group_attach (group2, da4, 0, 1, 0, 1);
+  emeus_constraint_layout_group_attach (group2, da2, 0, 1, 1, 2);
+  emeus_constraint_layout_group_attach (group2, da5, 0, 1, 2, 3);
+}
+
+static void
 emeus_test_application_window_init (EmeusTestApplicationWindow *self)
 {
   GtkWidget *box, *layout, *button;
@@ -178,7 +256,7 @@ emeus_test_application_window_init (EmeusTestApplicationWindow *self)
                             "clicked", G_CALLBACK (gtk_widget_destroy),
                             self);
 
-  build_grid (self);
+  build_grid2 (self);
 }
 
 static GtkWidget *
